@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MT5 Cloud Bridge & Multi-User Journal</title>
+  <title>MT5 Multi-User Transparent Trading Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
   <script>
@@ -54,209 +54,256 @@
   <!-- Toast Notification System -->
   <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Header -->
-  <header class="sticky top-0 z-40 bg-[#0c1222]/90 backdrop-blur-md border-b border-gray-800/80 px-4 py-3">
-    <div class="max-w-xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm shadow-amber-500/10">
-          <i class="ph-bold ph-plugs-connected text-lg"></i>
+  <!-- AUTH SCREEN (LOGIN / SIGNUP) -->
+  <div id="authScreen" class="fixed inset-0 z-50 bg-[#070a12] flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-gray-900/90 border border-gray-800 p-6 rounded-3xl space-y-4 shadow-2xl">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto text-2xl shadow-sm">
+          <i class="ph-bold ph-chart-polar"></i>
         </div>
+        <h1 class="text-lg font-bold text-white tracking-tight">MetaBridge Terminal</h1>
+        <p class="text-xs text-gray-400">Transparent Multi-Broker MT5 Network</p>
+      </div>
+
+      <div class="flex p-1 bg-gray-950 rounded-xl border border-gray-800 text-xs font-semibold">
+        <button id="tabBtnLogin" onclick="setAuthTab('login')" class="flex-1 py-2 rounded-lg bg-amber-500 text-gray-950 font-bold transition">Sign In</button>
+        <button id="tabBtnRegister" onclick="setAuthTab('register')" class="flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition">New Account</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3 text-xs">
         <div>
-          <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-            MetaBridge Journal
-            <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">MT5 Live</span>
-          </h1>
-          <p id="currentUserDisplay" class="text-[11px] text-gray-400">Guest User</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button onclick="openUserModal()" class="px-2.5 py-1.5 rounded-lg bg-gray-800/70 border border-gray-700/60 text-xs text-gray-300 hover:text-amber-400 transition flex items-center gap-1">
-          <i class="ph-bold ph-user-circle text-sm"></i>
-          <span id="btnProfileText" class="text-[11px]">Profile</span>
-        </button>
-        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Connected
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-xl mx-auto w-full px-4 pt-3 space-y-4 flex-1">
-
-    <!-- Connect Account Quick Banner -->
-    <div class="p-3 bg-gradient-to-r from-amber-500/15 via-gray-900 to-gray-900 border border-amber-500/30 rounded-2xl flex items-center justify-between">
-      <div>
-        <h2 class="text-xs font-bold text-white flex items-center gap-1">
-          <i class="ph-bold ph-shield-check text-amber-400"></i> Direct MT5 Cloud Bridge
-        </h2>
-        <p class="text-[10px] text-gray-400 mt-0.5">Sync any broker (dprime, VT Markets, Exness) via Read-Only access</p>
-      </div>
-      <button onclick="openSyncModal()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1 shrink-0">
-        <i class="ph-bold ph-plus"></i> Connect
-      </button>
-    </div>
-
-    <!-- Account Switcher Tabs -->
-    <div class="grid grid-cols-3 gap-1 p-1 bg-gray-900/90 rounded-2xl border border-gray-800 text-xs font-semibold">
-      <button onclick="setAccountFilter('all')" id="filter-all" class="filter-tab py-2 rounded-xl transition text-center bg-amber-500 text-gray-950 shadow-md">
-        All Accounts
-      </button>
-      <button onclick="setAccountFilter('dprime account')" id="filter-dprime" class="filter-tab py-2 rounded-xl transition text-center text-gray-400 hover:text-gray-200">
-        dprime
-      </button>
-      <button onclick="setAccountFilter('VT Markets')" id="filter-vt" class="filter-tab py-2 rounded-xl transition text-center text-gray-400 hover:text-gray-200">
-        VT Markets
-      </button>
-    </div>
-
-    <!-- Overview Stats Summary Card -->
-    <section class="grid grid-cols-3 gap-2.5">
-      <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
-        <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Net Profit</span>
-        <span id="statNetProfit" class="text-base font-black font-mono mt-0.5 block text-emerald-400">+$0.00</span>
-        <span id="statWinRate" class="text-[10px] text-gray-400 mt-1 block">Win: 0%</span>
-      </div>
-
-      <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
-        <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Total Trades</span>
-        <span id="statTotalTrades" class="text-base font-black font-mono mt-0.5 block text-white">0</span>
-        <span id="statWinLoss" class="text-[10px] text-gray-400 mt-1 block">0W - 0L</span>
-      </div>
-
-      <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
-        <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Profit Factor</span>
-        <span id="statProfitFactor" class="text-base font-black font-mono mt-0.5 block text-amber-400">0.00</span>
-        <span id="statAvgTrade" class="text-[10px] text-gray-400 mt-1 block">Avg: $0.00</span>
-      </div>
-    </section>
-
-    <!-- Navigation Page Switcher (Journal vs Public Transparent PnL vs Manual Add) -->
-    <div class="flex border-b border-gray-800 text-xs font-semibold gap-4">
-      <button onclick="switchView('journal')" id="viewBtn-journal" class="view-btn pb-2.5 border-b-2 border-amber-500 text-amber-400 flex items-center gap-1.5">
-        <i class="ph-bold ph-notebook"></i>
-        <span>My Journal</span>
-        <span id="badgeTradeCount" class="text-[10px] bg-gray-800 px-1.5 py-0.2 rounded-full text-gray-300">0</span>
-      </button>
-      <button onclick="switchView('leaderboard')" id="viewBtn-leaderboard" class="view-btn pb-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-1.5">
-        <i class="ph-bold ph-globe text-amber-400"></i>
-        <span>Community PnL</span>
-      </button>
-      <button onclick="switchView('manual')" id="viewBtn-manual" class="view-btn pb-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-1.5">
-        <i class="ph-bold ph-plus-circle"></i>
-        <span>Manual Entry</span>
-      </button>
-    </div>
-
-    <!-- VIEW 1: JOURNAL RECORDS -->
-    <section id="view-journal" class="space-y-3">
-      <div class="flex items-center gap-2">
-        <div class="relative flex-1">
-          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-          <input type="text" id="searchInput" oninput="renderTrades()" placeholder="Search pair (e.g. XAUUSD, BTC, GBP)..." class="w-full bg-gray-900 border border-gray-800 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500">
-        </div>
-        <select id="typeFilter" onchange="renderTrades()" class="bg-gray-900 border border-gray-800 rounded-xl px-2.5 py-2 text-xs text-gray-300 focus:outline-none">
-          <option value="all">All Types</option>
-          <option value="Buy">Buy Only</option>
-          <option value="Sell">Sell Only</option>
-          <option value="win">Wins Only</option>
-          <option value="loss">Losses Only</option>
-        </select>
-      </div>
-
-      <div id="tradeListContainer" class="space-y-2.5">
-        <!-- Rendered dynamically -->
-      </div>
-    </section>
-
-    <!-- VIEW 2: TRANSPARENT COMMUNITY PnL LEADERBOARD -->
-    <section id="view-leaderboard" class="hidden space-y-3">
-      <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-3.5 flex items-center justify-between">
-        <div>
-          <h3 class="text-xs font-bold text-white flex items-center gap-1.5">
-            <i class="ph-bold ph-chart-polar text-amber-400"></i> Public Transparent Feed
-          </h3>
-          <p class="text-[11px] text-gray-400 mt-0.5">Direct verified PnL records synced from MT5 terminals</p>
-        </div>
-        <button onclick="renderLeaderboard()" class="p-2 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 text-xs">
-          <i class="ph-bold ph-arrows-clockwise"></i>
-        </button>
-      </div>
-
-      <div id="leaderboardContainer" class="space-y-2">
-        <!-- Dynamically rendered profiles -->
-      </div>
-    </section>
-
-    <!-- VIEW 3: MANUAL ENTRY -->
-    <section id="view-manual" class="hidden space-y-4">
-      <form id="manualTradeForm" onsubmit="handleManualAdd(event)" class="bg-gray-900/80 border border-gray-800 p-4 rounded-2xl space-y-3">
-        <h2 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Manual Position Entry</h2>
-        
-        <div>
-          <label class="text-[11px] font-semibold text-gray-400 block mb-1">Account Label</label>
-          <input type="text" id="manAccount" placeholder="e.g. dprime account or PropFirm" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[11px] font-semibold text-gray-400 block mb-1">Symbol / Pair</label>
-            <input type="text" id="manAsset" placeholder="e.g. XAUUSD" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="text-[11px] font-semibold text-gray-400 block mb-1">Direction</label>
-            <select id="manType" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
-              <option value="Sell">Sell</option>
-              <option value="Buy">Buy</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[11px] font-semibold text-gray-400 block mb-1">Lot Size</label>
-            <input type="text" id="manLot" placeholder="0.01" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
-          </div>
-          <div>
-            <label class="text-[11px] font-semibold text-gray-400 block mb-1">P&L ($)</label>
-            <input type="number" step="any" id="manPnl" placeholder="e.g. 15.30 or -5.20" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+          <label class="text-[11px] font-semibold text-gray-400 block mb-1">Username / Trader Handle</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">@</span>
+            <input type="text" id="authUsername" required placeholder="karan_trader" class="w-full bg-gray-950 border border-gray-800 rounded-xl pl-7 pr-3 py-2.5 text-xs text-gray-100 focus:outline-none focus:border-amber-500 font-mono">
           </div>
         </div>
 
         <div>
-          <label class="text-[11px] font-semibold text-gray-400 block mb-1">Price Range / Notes</label>
-          <input type="text" id="manPrice" placeholder="e.g. 4386.44 -> 4371.08" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+          <label class="text-[11px] font-semibold text-gray-400 block mb-1">Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-100 focus:outline-none focus:border-amber-500">
         </div>
 
-        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg transition mt-2">
-          Save Position
+        <button type="submit" id="btnAuthSubmit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
+          <span>Enter Portal</span>
+          <i class="ph-bold ph-arrow-right"></i>
         </button>
       </form>
-    </section>
+    </div>
+  </div>
 
-  </main>
+  <!-- MAIN APP CONTAINER -->
+  <div id="appContainer" class="hidden flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-[#0c1222]/90 backdrop-blur-md border-b border-gray-800/80 px-4 py-3">
+      <div class="max-w-xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm shadow-amber-500/10">
+            <i class="ph-bold ph-plugs-connected text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+              MetaBridge Journal
+              <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Live MT5</span>
+            </h1>
+            <p id="headerUserHandle" class="text-[11px] text-emerald-400 font-mono font-medium">@loading...</p>
+          </div>
+        </div>
 
-  <!-- MODAL 1: CONNECT MT5 BROKER VIA CLOUD BRIDGE -->
+        <div class="flex items-center gap-2">
+          <button onclick="handleLogout()" class="px-2.5 py-1.5 rounded-lg bg-gray-800/70 border border-gray-700/60 text-xs text-gray-300 hover:text-rose-400 transition flex items-center gap-1">
+            <i class="ph-bold ph-sign-out text-sm"></i>
+            <span class="text-[11px] hidden sm:inline">Logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-xl mx-auto w-full px-4 pt-3 space-y-4 flex-1">
+
+      <!-- Connect MT5 Account Action Banner -->
+      <div class="p-3 bg-gradient-to-r from-amber-500/15 via-gray-900 to-gray-900 border border-amber-500/30 rounded-2xl flex items-center justify-between">
+        <div>
+          <h2 class="text-xs font-bold text-white flex items-center gap-1">
+            <i class="ph-bold ph-shield-check text-amber-400"></i> Cloud MT5 Integration
+          </h2>
+          <p class="text-[10px] text-gray-400 mt-0.5">Connect any broker account using Investor Password</p>
+        </div>
+        <button onclick="openSyncModal()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1 shrink-0">
+          <i class="ph-bold ph-plus"></i> Connect MT5
+        </button>
+      </div>
+
+      <!-- Dynamic Broker Tabs (Rendered based on user's active accounts) -->
+      <div id="dynamicBrokerTabs" class="flex gap-1.5 p-1 bg-gray-900/90 rounded-2xl border border-gray-800 text-xs font-semibold overflow-x-auto custom-scrollbar">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Overview Stats Summary Card -->
+      <section class="grid grid-cols-3 gap-2.5">
+        <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
+          <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Net Profit</span>
+          <span id="statNetProfit" class="text-base font-black font-mono mt-0.5 block text-emerald-400">+$0.00</span>
+          <span id="statWinRate" class="text-[10px] text-gray-400 mt-1 block">Win: 0%</span>
+        </div>
+
+        <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
+          <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Total Trades</span>
+          <span id="statTotalTrades" class="text-base font-black font-mono mt-0.5 block text-white">0</span>
+          <span id="statWinLoss" class="text-[10px] text-gray-400 mt-1 block">0W - 0L</span>
+        </div>
+
+        <div class="bg-gray-900/70 border border-gray-800 p-3 rounded-2xl">
+          <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold block">Profit Factor</span>
+          <span id="statProfitFactor" class="text-base font-black font-mono mt-0.5 block text-amber-400">0.00</span>
+          <span id="statAvgTrade" class="text-[10px] text-gray-400 mt-1 block">Avg: $0.00</span>
+        </div>
+      </section>
+
+      <!-- Navigation Page Switcher -->
+      <div class="flex border-b border-gray-800 text-xs font-semibold gap-4">
+        <button onclick="switchView('journal')" id="viewBtn-journal" class="view-btn pb-2.5 border-b-2 border-amber-500 text-amber-400 flex items-center gap-1.5">
+          <i class="ph-bold ph-notebook"></i>
+          <span>My Journal</span>
+          <span id="badgeTradeCount" class="text-[10px] bg-gray-800 px-1.5 py-0.2 rounded-full text-gray-300">0</span>
+        </button>
+        <button onclick="switchView('leaderboard')" id="viewBtn-leaderboard" class="view-btn pb-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-1.5">
+          <i class="ph-bold ph-globe text-amber-400"></i>
+          <span>Community PnL</span>
+        </button>
+        <button onclick="switchView('manual')" id="viewBtn-manual" class="view-btn pb-2.5 border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-1.5">
+          <i class="ph-bold ph-plus-circle"></i>
+          <span>Manual Entry</span>
+        </button>
+      </div>
+
+      <!-- VIEW 1: JOURNAL RECORDS -->
+      <section id="view-journal" class="space-y-3">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" id="searchInput" oninput="renderTrades()" placeholder="Search pair (e.g. XAUUSD, BTC, GBP)..." class="w-full bg-gray-900 border border-gray-800 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500">
+          </div>
+          <select id="typeFilter" onchange="renderTrades()" class="bg-gray-900 border border-gray-800 rounded-xl px-2.5 py-2 text-xs text-gray-300 focus:outline-none">
+            <option value="all">All Types</option>
+            <option value="Buy">Buy Only</option>
+            <option value="Sell">Sell Only</option>
+            <option value="win">Wins Only</option>
+            <option value="loss">Losses Only</option>
+          </select>
+        </div>
+
+        <div id="tradeListContainer" class="space-y-2.5">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: TRANSPARENT COMMUNITY PnL LEADERBOARD -->
+      <section id="view-leaderboard" class="hidden space-y-3">
+        <div class="bg-gray-900/60 border border-gray-800 rounded-2xl p-3.5 flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i class="ph-bold ph-chart-polar text-amber-400"></i> Transparent Network PnL
+            </h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">Real-time verified performance of registered traders</p>
+          </div>
+          <button onclick="renderLeaderboard()" class="p-2 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 text-xs">
+            <i class="ph-bold ph-arrows-clockwise"></i>
+          </button>
+        </div>
+
+        <div id="leaderboardContainer" class="space-y-2">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: MANUAL ENTRY -->
+      <section id="view-manual" class="hidden space-y-4">
+        <form id="manualTradeForm" onsubmit="handleManualAdd(event)" class="bg-gray-900/80 border border-gray-800 p-4 rounded-2xl space-y-3 text-xs">
+          <h2 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Manual Position Entry</h2>
+          
+          <div>
+            <label class="text-[11px] font-semibold text-gray-400 block mb-1">Broker / Account Name</label>
+            <input type="text" id="manAccount" placeholder="e.g. My-Custom-Broker" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] font-semibold text-gray-400 block mb-1">Symbol / Pair</label>
+              <input type="text" id="manAsset" placeholder="e.g. XAUUSD" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold text-gray-400 block mb-1">Direction</label>
+              <select id="manType" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
+                <option value="Sell">Sell</option>
+                <option value="Buy">Buy</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] font-semibold text-gray-400 block mb-1">Lot Size</label>
+              <input type="text" id="manLot" placeholder="0.01" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+            </div>
+            <div>
+              <label class="text-[11px] font-semibold text-gray-400 block mb-1">P&L ($)</label>
+              <input type="number" step="any" id="manPnl" placeholder="e.g. 25.50 or -10.00" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+            </div>
+          </div>
+
+          <div>
+            <label class="text-[11px] font-semibold text-gray-400 block mb-1">Price Range / Notes</label>
+            <input type="text" id="manPrice" placeholder="e.g. 4380.10 -> 4395.20" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500 font-mono">
+          </div>
+
+          <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg transition mt-2">
+            Save Entry
+          </button>
+        </form>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0c1222]/95 border-t border-gray-800/80 px-4 py-2.5 z-40 backdrop-blur-md">
+      <div class="max-w-xl mx-auto grid grid-cols-3 text-center text-xs">
+        <button onclick="switchView('journal')" id="nav-journal" class="flex flex-col items-center gap-1 py-1 text-amber-400 font-bold">
+          <i class="ph-bold ph-notebook text-lg"></i>
+          <span class="text-[10px]">Journal</span>
+        </button>
+        <button onclick="switchView('leaderboard')" id="nav-leaderboard" class="flex flex-col items-center gap-1 py-1 text-gray-400 hover:text-gray-200">
+          <i class="ph-bold ph-globe text-lg"></i>
+          <span class="text-[10px]">Community</span>
+        </button>
+        <button onclick="switchView('manual')" id="nav-manual" class="flex flex-col items-center gap-1 py-1 text-gray-400 hover:text-gray-200">
+          <i class="ph-bold ph-plus-circle text-lg"></i>
+          <span class="text-[10px]">Manual Entry</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- MODAL: LINK MT5 BROKER VIA CLOUD BRIDGE -->
   <div id="syncModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm p-4 space-y-3.5 text-xs">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-1.5">
           <i class="ph-bold ph-plugs text-amber-400 text-base"></i>
-          <h3 class="font-bold text-white text-sm">Bridge MT5 Account</h3>
+          <h3 class="font-bold text-white text-sm">Connect Any MT5 Broker</h3>
         </div>
         <button onclick="closeSyncModal()" class="text-gray-400 hover:text-white text-lg">&times;</button>
       </div>
 
       <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 space-y-1">
-        <p class="font-semibold flex items-center gap-1"><i class="ph-bold ph-info"></i> Read-Only Investor Security</p>
-        <p class="text-gray-300">Sirf Read-Only Investor password use karein. Cloud server sirf closed trade history read karta hai.</p>
+        <p class="font-semibold flex items-center gap-1"><i class="ph-bold ph-shield-check"></i> Security Protocol</p>
+        <p class="text-gray-300">Enter your <strong>Investor Password (Read-Only)</strong>. No trading permissions are requested.</p>
       </div>
 
       <form id="mt5SyncForm" onsubmit="handleMT5Connect(event)" class="space-y-3">
         <div>
           <label class="text-[11px] text-gray-400 block mb-1">Broker Exact Server Name</label>
-          <input type="text" id="bridgeServer" placeholder="e.g. VTMarkets-Live ya DPrime-Server" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-gray-200 focus:border-amber-500 font-mono">
+          <input type="text" id="bridgeServer" placeholder="e.g. VTMarkets-Live or DPrime-Server" required class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-gray-200 focus:border-amber-500 font-mono">
         </div>
 
         <div>
@@ -271,108 +318,32 @@
 
         <button type="submit" id="btnConnectSubmit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-1">
           <i class="ph-bold ph-arrows-clockwise"></i>
-          <span>Verify & Fetch Deals</span>
+          <span>Link Broker & Sync History</span>
         </button>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 2: USER PROFILE & IDENTITY -->
-  <div id="userModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-sm p-4 space-y-3 text-xs">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-white text-sm flex items-center gap-1.5">
-          <i class="ph-bold ph-user-circle text-amber-400"></i> Trader Profile
-        </h3>
-        <button onclick="closeUserModal()" class="text-gray-400 hover:text-white text-lg">&times;</button>
-      </div>
-
-      <p class="text-gray-400 text-[11px]">
-        Apna public trader username set karein jisse aapka PnL transparent community dashboard par show hoga.
-      </p>
-
-      <div>
-        <label class="text-[11px] text-gray-400 block mb-1">Public Display Handle</label>
-        <input type="text" id="inputUsername" placeholder="@karan_trader" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-gray-200 font-mono focus:border-amber-500">
-      </div>
-
-      <div class="pt-2 flex gap-2">
-        <button onclick="clearAllData()" class="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-semibold">
-          Reset History
-        </button>
-        <button onclick="saveUserProfile()" class="flex-1 py-2 bg-amber-500 text-gray-950 font-bold rounded-xl">
-          Save Handle
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Navigation Bar -->
-  <nav class="fixed bottom-0 left-0 right-0 bg-[#0c1222]/95 border-t border-gray-800/80 px-4 py-2.5 z-40 backdrop-blur-md">
-    <div class="max-w-xl mx-auto grid grid-cols-3 text-center text-xs">
-      <button onclick="switchView('journal')" id="nav-journal" class="flex flex-col items-center gap-1 py-1 text-amber-400 font-bold">
-        <i class="ph-bold ph-notebook text-lg"></i>
-        <span class="text-[10px]">Journal</span>
-      </button>
-      <button onclick="switchView('leaderboard')" id="nav-leaderboard" class="flex flex-col items-center gap-1 py-1 text-gray-400 hover:text-gray-200">
-        <i class="ph-bold ph-globe text-lg"></i>
-        <span class="text-[10px]">Community</span>
-      </button>
-      <button onclick="switchView('manual')" id="nav-manual" class="flex flex-col items-center gap-1 py-1 text-gray-400 hover:text-gray-200">
-        <i class="ph-bold ph-plus-circle text-lg"></i>
-        <span class="text-[10px]">Manual Entry</span>
-      </button>
-    </div>
-  </nav>
-
   <script>
-    // Configuration: Replace with your actual Render deployment URL
+    // Set your active Render backend endpoint here:
     const BACKEND_URL = "https://mt5-bridge.onrender.com";
 
-    // Initial trades loaded from your broker history
-    const INITIAL_TRADES = [
-      { id: 'dp-1', account: 'dprime account', date: '2026-09-02 18:16:08', asset: 'BTCUST.cfd', type: 'Sell', lot: '0.01', price: '77 163.52 → 76 818.70', pnl: 3.45 },
-      { id: 'dp-2', account: 'dprime account', date: '2026-09-02 18:16:08', asset: 'XAUUSD.s', type: 'Sell', lot: '0.01', price: '4 386.44 → 4 371.08', pnl: 15.36 },
-      { id: 'dp-3', account: 'dprime account', date: '2026-09-02 17:33:32', asset: 'BTCUST.cfd', type: 'Sell', lot: '0.05', price: '77 105.73 → 77 092.60', pnl: 0.66 },
-      { id: 'dp-4', account: 'dprime account', date: '2026-09-02 07:54:50', asset: 'GBPJPY.s', type: 'Sell', lot: '0.05', price: '216.438 → 216.067', pnl: 11.36 },
-      { id: 'dp-5', account: 'dprime account', date: '2026-09-02 07:54:50', asset: 'GBPJPY.s', type: 'Sell', lot: '0.01', price: '216.448 → 216.067', pnl: 2.33 },
-      { id: 'vt-1', account: 'VT Markets', date: '2026-09-11 06:06:42', asset: 'XAUUSD-STD', type: 'Sell', lot: '0.01', price: '4 321.64 → 4 319.21', pnl: 2.43 },
-      { id: 'vt-2', account: 'VT Markets', date: '2026-09-11 05:35:16', asset: 'GBPNZD-STD', type: 'Sell', lot: '0.02', price: '2.32577 → 2.32443', pnl: 1.56 },
-      { id: 'vt-3', account: 'VT Markets', date: '2026-09-09 16:24:43', asset: 'XAUUSD-STD', type: 'Buy', lot: '0.01', price: '4 419.66 → 4 426.87', pnl: 7.21 },
-      { id: 'vt-4', account: 'VT Markets', date: '2026-09-09 07:10:26', asset: 'GBPNZD-STD', type: 'Sell', lot: '0.02', price: '2.31171 → 2.31445', pnl: -3.21 }
-    ];
-
-    let tradeData = [];
+    // Application State
+    let currentUser = null;
+    let userTrades = [];
     let currentAccountFilter = 'all';
-    let currentUsername = 'karan_trader';
+    let authMode = 'login'; // 'login' or 'register'
 
-    function initApp() {
-      const storedTrades = localStorage.getItem('pro_mt5_trades_v3');
-      if (storedTrades) {
-        try { tradeData = JSON.parse(storedTrades); } catch(e) { tradeData = [...INITIAL_TRADES]; }
-      } else {
-        tradeData = [...INITIAL_TRADES];
-        saveTrades();
-      }
-
-      const storedUser = localStorage.getItem('pro_mt5_user');
-      if (storedUser) currentUsername = storedUser;
-
-      updateUserUI();
-      renderTrades();
-      renderLeaderboard();
+    // Multi-User Database Mock (Persisted in localStorage across user logins)
+    function getUsersDB() {
+      return JSON.parse(localStorage.getItem('portal_users_db') || '{}');
     }
 
-    function saveTrades() {
-      localStorage.setItem('pro_mt5_trades_v3', JSON.stringify(tradeData));
+    function saveUsersDB(db) {
+      localStorage.setItem('portal_users_db', JSON.stringify(db));
     }
 
-    function updateUserUI() {
-      document.getElementById('currentUserDisplay').textContent = `@${currentUsername}`;
-      document.getElementById('btnProfileText').textContent = `@${currentUsername.slice(0, 8)}`;
-      document.getElementById('inputUsername').value = currentUsername;
-    }
-
+    // UI Toast Notification helper
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -390,17 +361,121 @@
       }, 3500);
     }
 
-    function setAccountFilter(account) {
-      currentAccountFilter = account;
-      document.querySelectorAll('.filter-tab').forEach(b => {
-        b.className = "filter-tab py-2 rounded-xl transition text-center text-gray-400 hover:text-gray-200";
-      });
-      
-      const btnId = account === 'all' ? 'filter-all' : account === 'dprime account' ? 'filter-dprime' : 'filter-vt';
-      const activeBtn = document.getElementById(btnId);
-      if (activeBtn) {
-        activeBtn.className = "filter-tab py-2 rounded-xl transition text-center active-tab bg-amber-500 text-gray-950 font-bold shadow-md";
+    // Authentication Handlers
+    function setAuthTab(mode) {
+      authMode = mode;
+      const btnLogin = document.getElementById('tabBtnLogin');
+      const btnReg = document.getElementById('tabBtnRegister');
+      const btnSubmit = document.getElementById('btnAuthSubmit');
+
+      if (mode === 'login') {
+        btnLogin.className = "flex-1 py-2 rounded-lg bg-amber-500 text-gray-950 font-bold transition";
+        btnReg.className = "flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition";
+        btnSubmit.innerHTML = `<span>Enter Portal</span><i class="ph-bold ph-arrow-right"></i>`;
+      } else {
+        btnReg.className = "flex-1 py-2 rounded-lg bg-amber-500 text-gray-950 font-bold transition";
+        btnLogin.className = "flex-1 py-2 rounded-lg text-gray-400 hover:text-white transition";
+        btnSubmit.innerHTML = `<span>Create Account</span><i class="ph-bold ph-user-plus"></i>`;
       }
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('authUsername').value.replace('@', '').trim().toLowerCase();
+      const password = document.getElementById('authPassword').value;
+
+      if (!username || !password) {
+        showToast('Please fill all fields', 'error');
+        return;
+      }
+
+      const db = getUsersDB();
+
+      if (authMode === 'register') {
+        if (db[username]) {
+          showToast('Username already exists. Please choose another or sign in.', 'error');
+          return;
+        }
+        db[username] = {
+          password: password,
+          trades: []
+        };
+        saveUsersDB(db);
+        loginUser(username);
+        showToast(`Account @${username} registered successfully!`);
+      } else {
+        // Sign in
+        if (!db[username] || db[username].password !== password) {
+          showToast('Invalid username or password', 'error');
+          return;
+        }
+        loginUser(username);
+        showToast(`Welcome back, @${username}!`);
+      }
+    }
+
+    function loginUser(username) {
+      currentUser = username;
+      localStorage.setItem('active_session_user', username);
+
+      const db = getUsersDB();
+      userTrades = db[username]?.trades || [];
+
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('appContainer').classList.remove('hidden');
+      document.getElementById('headerUserHandle').textContent = `@${username}`;
+
+      currentAccountFilter = 'all';
+      renderBrokerTabs();
+      renderTrades();
+      renderLeaderboard();
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      userTrades = [];
+      localStorage.removeItem('active_session_user');
+      document.getElementById('appContainer').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      showToast('Logged out successfully', 'info');
+    }
+
+    function saveUserTrades() {
+      if (!currentUser) return;
+      const db = getUsersDB();
+      if (!db[currentUser]) db[currentUser] = { password: 'user123', trades: [] };
+      db[currentUser].trades = userTrades;
+      saveUsersDB(db);
+    }
+
+    // Dynamic Broker Filters
+    function renderBrokerTabs() {
+      const brokerTabsContainer = document.getElementById('dynamicBrokerTabs');
+      brokerTabsContainer.innerHTML = '';
+
+      // Extract unique broker accounts present in user's trades
+      const brokers = [...new Set(userTrades.map(t => t.account).filter(Boolean))];
+
+      // "All Accounts" Button
+      const allBtn = document.createElement('button');
+      allBtn.className = `filter-tab px-3 py-1.5 rounded-xl transition text-center whitespace-nowrap ${currentAccountFilter === 'all' ? 'bg-amber-500 text-gray-950 font-bold shadow-md' : 'text-gray-400 hover:text-gray-200'}`;
+      allBtn.textContent = 'All Accounts';
+      allBtn.onclick = () => setAccountFilter('all');
+      brokerTabsContainer.appendChild(allBtn);
+
+      // Render tab for each connected broker
+      brokers.forEach(broker => {
+        const btn = document.createElement('button');
+        btn.className = `filter-tab px-3 py-1.5 rounded-xl transition text-center whitespace-nowrap ${currentAccountFilter === broker ? 'bg-amber-500 text-gray-950 font-bold shadow-md' : 'text-gray-400 hover:text-gray-200'}`;
+        btn.textContent = broker;
+        btn.onclick = () => setAccountFilter(broker);
+        brokerTabsContainer.appendChild(btn);
+      });
+    }
+
+    function setAccountFilter(broker) {
+      currentAccountFilter = broker;
+      renderBrokerTabs();
       renderTrades();
     }
 
@@ -423,11 +498,12 @@
       if (viewName === 'leaderboard') renderLeaderboard();
     }
 
+    // Trade Feed & Analytics
     function renderTrades() {
       const search = (document.getElementById('searchInput').value || '').toLowerCase();
       const typeFilter = document.getElementById('typeFilter').value;
 
-      let filtered = tradeData.filter(t => {
+      let filtered = userTrades.filter(t => {
         const matchAcc = currentAccountFilter === 'all' || t.account === currentAccountFilter;
         const matchSearch = (t.asset || '').toLowerCase().includes(search) || (t.account || '').toLowerCase().includes(search);
         
@@ -472,7 +548,7 @@
         container.innerHTML = `
           <div class="text-center py-12 bg-gray-900/40 border border-gray-800 rounded-2xl p-6">
             <i class="ph-duotone ph-plugs text-3xl text-gray-500 mb-2"></i>
-            <p class="text-xs text-gray-400">No synced trades found. Click "Connect" to bridge MT5.</p>
+            <p class="text-xs text-gray-400">No trades found. Link an MT5 broker account to auto-populate history.</p>
           </div>
         `;
         return;
@@ -483,12 +559,10 @@
         const pnlFormatted = isWin ? `+$${Number(trade.pnl).toFixed(2)}` : `-$${Math.abs(Number(trade.pnl)).toFixed(2)}`;
         const card = document.createElement('div');
         card.className = "bg-gray-900/70 border border-gray-800/90 p-3 rounded-2xl space-y-2 transition shadow-sm";
-        
-        const badgeColor = trade.account?.includes('dprime') ? 'bg-amber-500/15 text-amber-300 border-amber-500/20' : 'bg-blue-500/15 text-blue-300 border-blue-500/20';
 
         card.innerHTML = `
           <div class="flex justify-between items-center text-[11px]">
-            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] border ${badgeColor}">
+            <span class="px-2 py-0.5 rounded-md font-semibold text-[10px] border bg-amber-500/15 text-amber-300 border-amber-500/20">
               ${trade.account || 'MT5 Live'}
             </span>
             <span class="text-gray-400 font-mono text-[10px]">${trade.date || 'Recent'}</span>
@@ -522,40 +596,55 @@
       });
     }
 
+    // Transparent Community Leaderboard
     function renderLeaderboard() {
-      const myNet = tradeData.reduce((acc, c) => acc + (parseFloat(c.pnl) || 0), 0);
-      const myWins = tradeData.filter(t => t.pnl > 0).length;
-      const myWinRate = tradeData.length > 0 ? ((myWins / tradeData.length) * 100).toFixed(0) : 0;
+      const db = getUsersDB();
+      const communityList = [];
 
-      const communityUsers = [
-        { handle: `@${currentUsername} (You)`, netPnl: myNet, trades: tradeData.length, winRate: myWinRate, broker: 'Multi-Broker' },
-        { handle: '@apex_trader', netPnl: 482.10, trades: 42, winRate: 68, broker: 'VT Markets' },
-        { handle: '@scalp_master', netPnl: 194.50, trades: 18, winRate: 61, broker: 'dprime account' },
-        { handle: '@fx_pro_99', netPnl: -23.40, trades: 14, winRate: 42, broker: 'Exness-Real' }
-      ];
+      Object.keys(db).forEach(user => {
+        const trades = db[user].trades || [];
+        const net = trades.reduce((acc, c) => acc + (parseFloat(c.pnl) || 0), 0);
+        const wins = trades.filter(t => t.pnl > 0).length;
+        const winRate = trades.length > 0 ? ((wins / trades.length) * 100).toFixed(0) : 0;
+        const activeBrokers = [...new Set(trades.map(t => t.account))].join(', ') || 'No Broker Connected';
 
-      communityUsers.sort((a, b) => b.netPnl - a.netPnl);
+        communityList.push({
+          handle: `@${user}`,
+          netPnl: net,
+          tradesCount: trades.length,
+          winRate: winRate,
+          brokers: activeBrokers,
+          isCurrent: user === currentUser
+        });
+      });
+
+      communityList.sort((a, b) => b.netPnl - a.netPnl);
 
       const container = document.getElementById('leaderboardContainer');
       container.innerHTML = '';
 
-      communityUsers.forEach((user, index) => {
-        const isWin = user.netPnl >= 0;
+      if (communityList.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-gray-500">No active traders on the network yet.</div>`;
+        return;
+      }
+
+      communityList.forEach((u, index) => {
+        const isWin = u.netPnl >= 0;
         const rankColor = index === 0 ? 'text-amber-400' : index === 1 ? 'text-gray-300' : index === 2 ? 'text-amber-600' : 'text-gray-500';
 
         const row = document.createElement('div');
-        row.className = "bg-gray-900/80 border border-gray-800 p-3 rounded-2xl flex items-center justify-between";
+        row.className = `bg-gray-900/80 border ${u.isCurrent ? 'border-amber-500/50 bg-amber-500/5' : 'border-gray-800'} p-3 rounded-2xl flex items-center justify-between`;
         row.innerHTML = `
           <div class="flex items-center gap-3">
             <span class="font-black font-mono text-sm ${rankColor}">#${index + 1}</span>
             <div>
-              <span class="text-xs font-bold text-gray-200 block">${user.handle}</span>
-              <span class="text-[10px] text-gray-500 font-mono">${user.broker} • ${user.trades} trades • ${user.winRate}% win</span>
+              <span class="text-xs font-bold text-gray-200 block">${u.handle} ${u.isCurrent ? '<span class="text-[10px] text-amber-400 font-normal">(You)</span>' : ''}</span>
+              <span class="text-[10px] text-gray-500 font-mono">${u.brokers} • ${u.tradesCount} trades • ${u.winRate}% win</span>
             </div>
           </div>
           <div class="text-right">
             <span class="font-bold font-mono text-xs ${isWin ? 'text-emerald-400' : 'text-rose-400'}">
-              ${isWin ? '+' : ''}$${user.netPnl.toFixed(2)}
+              ${isWin ? '+' : ''}$${u.netPnl.toFixed(2)}
             </span>
           </div>
         `;
@@ -563,7 +652,7 @@
       });
     }
 
-    // Direct MT5 Cloud Bridge Handlers
+    // MT5 Cloud Handlers
     function openSyncModal() {
       document.getElementById('syncModal').classList.remove('hidden');
     }
@@ -576,13 +665,13 @@
       e.preventDefault();
       const btn = document.getElementById('btnConnectSubmit');
       btn.disabled = true;
-      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Linking with MetaApi Cloud...`;
+      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Handshaking MetaApi...`;
 
-      const payload = {
-        server: document.getElementById('bridgeServer').value.trim(),
-        login: document.getElementById('bridgeLogin').value.trim(),
-        password: document.getElementById('bridgePassword').value.trim()
-      };
+      const server = document.getElementById('bridgeServer').value.trim();
+      const login = document.getElementById('bridgeLogin').value.trim();
+      const password = document.getElementById('bridgePassword').value.trim();
+
+      const payload = { server, login, password };
 
       try {
         const connRes = await fetch(`${BACKEND_URL}/api/connect`, {
@@ -592,42 +681,43 @@
         });
 
         const connData = await connRes.json();
-        if (!connData.success) throw new Error(connData.error || 'Connection rejected by broker');
+        if (!connData.success) throw new Error(connData.error || 'Broker rejected credentials');
 
-        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Synchronizing Deals...`;
+        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Downloading Deals...`;
 
         const tradesRes = await fetch(`${BACKEND_URL}/api/trades/${connData.accountId}`);
         const tradesData = await tradesRes.json();
-        if (!tradesData.success) throw new Error(tradesData.error || 'Failed to download history');
+        if (!tradesData.success) throw new Error(tradesData.error || 'Failed to download deals');
 
-        // Assign broker name tag
+        // Tag trades with user's specific broker server name
         const formatted = tradesData.trades.map(t => ({
           ...t,
-          account: payload.server.toLowerCase().includes('dprime') ? 'dprime account' : 'VT Markets'
+          account: server
         }));
 
-        tradeData = [...formatted, ...tradeData];
-        saveTrades();
+        userTrades = [...formatted, ...userTrades];
+        saveUserTrades();
+        renderBrokerTabs();
         renderTrades();
         renderLeaderboard();
         closeSyncModal();
-        showToast(`Successfully connected! Synced ${formatted.length} deals.`);
+        showToast(`Connected ${server}! Fetched ${formatted.length} closed deals.`);
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>Verify & Fetch Deals</span>`;
+        btn.innerHTML = `<i class="ph-bold ph-arrows-clockwise"></i> <span>Link Broker & Sync History</span>`;
       }
     }
 
     function handleManualAdd(e) {
       e.preventDefault();
-      const account = document.getElementById('manAccount').value;
-      const asset = document.getElementById('manAsset').value;
+      const account = document.getElementById('manAccount').value.trim();
+      const asset = document.getElementById('manAsset').value.trim();
       const type = document.getElementById('manType').value;
-      const lot = document.getElementById('manLot').value || '0.01';
+      const lot = document.getElementById('manLot').value.trim() || '0.01';
       const pnl = parseFloat(document.getElementById('manPnl').value) || 0;
-      const price = document.getElementById('manPrice').value || 'Manual Entry';
+      const price = document.getElementById('manPrice').value.trim() || 'Manual Entry';
 
       const newTrade = {
         id: `man-${Date.now()}`,
@@ -640,56 +730,32 @@
         date: new Date().toISOString().slice(0, 19).replace('T', ' ')
       };
 
-      tradeData.unshift(newTrade);
-      saveTrades();
+      userTrades.unshift(newTrade);
+      saveUserTrades();
+      renderBrokerTabs();
       renderTrades();
       renderLeaderboard();
-      
+
       e.target.reset();
       showToast('Position saved!');
       switchView('journal');
     }
 
     function deleteTrade(id) {
-      tradeData = tradeData.filter(t => t.id !== id);
-      saveTrades();
+      userTrades = userTrades.filter(t => t.id !== id);
+      saveUserTrades();
+      renderBrokerTabs();
       renderTrades();
       renderLeaderboard();
-      showToast('Record removed', 'info');
+      showToast('Record deleted', 'info');
     }
 
-    // User Profile Handlers
-    function openUserModal() {
-      document.getElementById('userModal').classList.remove('hidden');
-    }
-
-    function closeUserModal() {
-      document.getElementById('userModal').classList.add('hidden');
-    }
-
-    function saveUserProfile() {
-      const val = document.getElementById('inputUsername').value.replace('@', '').trim();
-      if (val) {
-        currentUsername = val;
-        localStorage.setItem('pro_mt5_user', val);
-        updateUserUI();
-        renderLeaderboard();
-        showToast('Trader handle updated!');
-      }
-      closeUserModal();
-    }
-
-    function clearAllData() {
-      tradeData = [...INITIAL_TRADES];
-      saveTrades();
-      renderTrades();
-      renderLeaderboard();
-      closeUserModal();
-      showToast('Reset to default history records');
-    }
-
+    // Auto-check active session on load
     window.onload = () => {
-      initApp();
+      const activeUser = localStorage.getItem('active_session_user');
+      if (activeUser) {
+        loginUser(activeUser);
+      }
     };
   </script>
 </body>
