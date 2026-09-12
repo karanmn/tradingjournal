@@ -661,11 +661,14 @@
       document.getElementById('syncModal').classList.add('hidden');
     }
 
+        // Make sure this points to your exact live Render URL
+    const BACKEND_URL = "https://mt5-bridge.onrender.com"; 
+
     async function handleMT5Connect(e) {
       e.preventDefault();
       const btn = document.getElementById('btnConnectSubmit');
       btn.disabled = true;
-      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Handshaking MetaApi...`;
+      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Waking Server & Connecting...`;
 
       const server = document.getElementById('bridgeServer').value.trim();
       const login = document.getElementById('bridgeLogin').value.trim();
@@ -674,22 +677,33 @@
       const payload = { server, login, password };
 
       try {
+        // Step 1: Connect Account
         const connRes = await fetch(`${BACKEND_URL}/api/connect`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
+        if (!connRes.ok) {
+          const errBody = await connRes.json();
+          throw new Error(errBody.error || `Server responded with ${connRes.status}`);
+        }
+
         const connData = await connRes.json();
         if (!connData.success) throw new Error(connData.error || 'Broker rejected credentials');
 
-        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Downloading Deals...`;
+        // Step 2: Sync Deals
+        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Deploying Terminal & Syncing...`;
 
         const tradesRes = await fetch(`${BACKEND_URL}/api/trades/${connData.accountId}`);
+        if (!tradesRes.ok) {
+          const errBody = await tradesRes.json();
+          throw new Error(errBody.error || 'Sync timeout, try again in 15 seconds');
+        }
+
         const tradesData = await tradesRes.json();
         if (!tradesData.success) throw new Error(tradesData.error || 'Failed to download deals');
 
-        // Tag trades with user's specific broker server name
         const formatted = tradesData.trades.map(t => ({
           ...t,
           account: server
@@ -701,8 +715,9 @@
         renderTrades();
         renderLeaderboard();
         closeSyncModal();
-        showToast(`Connected ${server}! Fetched ${formatted.length} closed deals.`);
+        showToast(`Connected ${server}! Fetched ${formatted.length} deals.`);
       } catch (err) {
+        console.error(err);
         showToast(err.message, 'error');
       } finally {
         btn.disabled = false;
