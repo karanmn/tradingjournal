@@ -134,7 +134,7 @@
         </button>
       </div>
 
-      <!-- Dynamic Broker Tabs (Rendered based on user's active accounts) -->
+      <!-- Dynamic Broker Tabs -->
       <div id="dynamicBrokerTabs" class="flex gap-1.5 p-1 bg-gray-900/90 rounded-2xl border border-gray-800 text-xs font-semibold overflow-x-auto custom-scrollbar">
         <!-- Rendered dynamically -->
       </div>
@@ -325,16 +325,15 @@
   </div>
 
   <script>
-    // Set your active Render backend endpoint here:
+    // Exact live Render backend endpoint
     const BACKEND_URL = "https://mt5-bridge.onrender.com";
 
     // Application State
     let currentUser = null;
     let userTrades = [];
     let currentAccountFilter = 'all';
-    let authMode = 'login'; // 'login' or 'register'
+    let authMode = 'login';
 
-    // Multi-User Database Mock (Persisted in localStorage across user logins)
     function getUsersDB() {
       return JSON.parse(localStorage.getItem('portal_users_db') || '{}');
     }
@@ -343,7 +342,6 @@
       localStorage.setItem('portal_users_db', JSON.stringify(db));
     }
 
-    // UI Toast Notification helper
     function showToast(message, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -358,10 +356,9 @@
       setTimeout(() => {
         toast.classList.add('opacity-0', '-translate-y-2');
         setTimeout(() => toast.remove(), 300);
-      }, 3500);
+      }, 4000);
     }
 
-    // Authentication Handlers
     function setAuthTab(mode) {
       authMode = mode;
       const btnLogin = document.getElementById('tabBtnLogin');
@@ -393,7 +390,7 @@
 
       if (authMode === 'register') {
         if (db[username]) {
-          showToast('Username already exists. Please choose another or sign in.', 'error');
+          showToast('Username already exists. Sign in instead.', 'error');
           return;
         }
         db[username] = {
@@ -402,9 +399,8 @@
         };
         saveUsersDB(db);
         loginUser(username);
-        showToast(`Account @${username} registered successfully!`);
+        showToast(`Account @${username} created!`);
       } else {
-        // Sign in
         if (!db[username] || db[username].password !== password) {
           showToast('Invalid username or password', 'error');
           return;
@@ -437,7 +433,7 @@
       localStorage.removeItem('active_session_user');
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
-      showToast('Logged out successfully', 'info');
+      showToast('Logged out', 'info');
     }
 
     function saveUserTrades() {
@@ -448,22 +444,18 @@
       saveUsersDB(db);
     }
 
-    // Dynamic Broker Filters
     function renderBrokerTabs() {
       const brokerTabsContainer = document.getElementById('dynamicBrokerTabs');
       brokerTabsContainer.innerHTML = '';
 
-      // Extract unique broker accounts present in user's trades
       const brokers = [...new Set(userTrades.map(t => t.account).filter(Boolean))];
 
-      // "All Accounts" Button
       const allBtn = document.createElement('button');
       allBtn.className = `filter-tab px-3 py-1.5 rounded-xl transition text-center whitespace-nowrap ${currentAccountFilter === 'all' ? 'bg-amber-500 text-gray-950 font-bold shadow-md' : 'text-gray-400 hover:text-gray-200'}`;
       allBtn.textContent = 'All Accounts';
       allBtn.onclick = () => setAccountFilter('all');
       brokerTabsContainer.appendChild(allBtn);
 
-      // Render tab for each connected broker
       brokers.forEach(broker => {
         const btn = document.createElement('button');
         btn.className = `filter-tab px-3 py-1.5 rounded-xl transition text-center whitespace-nowrap ${currentAccountFilter === broker ? 'bg-amber-500 text-gray-950 font-bold shadow-md' : 'text-gray-400 hover:text-gray-200'}`;
@@ -498,7 +490,6 @@
       if (viewName === 'leaderboard') renderLeaderboard();
     }
 
-    // Trade Feed & Analytics
     function renderTrades() {
       const search = (document.getElementById('searchInput').value || '').toLowerCase();
       const typeFilter = document.getElementById('typeFilter').value;
@@ -596,7 +587,6 @@
       });
     }
 
-    // Transparent Community Leaderboard
     function renderLeaderboard() {
       const db = getUsersDB();
       const communityList = [];
@@ -652,7 +642,6 @@
       });
     }
 
-    // MT5 Cloud Handlers
     function openSyncModal() {
       document.getElementById('syncModal').classList.remove('hidden');
     }
@@ -661,14 +650,11 @@
       document.getElementById('syncModal').classList.add('hidden');
     }
 
-        // Make sure this points to your exact live Render URL
-    const BACKEND_URL = "https://mt5-bridge.onrender.com"; 
-
     async function handleMT5Connect(e) {
       e.preventDefault();
       const btn = document.getElementById('btnConnectSubmit');
       btn.disabled = true;
-      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Waking Server & Connecting...`;
+      btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Contacting Bridge Server...`;
 
       const server = document.getElementById('bridgeServer').value.trim();
       const login = document.getElementById('bridgeLogin').value.trim();
@@ -677,34 +663,29 @@
       const payload = { server, login, password };
 
       try {
-        // Step 1: Connect Account
+        // Ping / Connect
         const connRes = await fetch(`${BACKEND_URL}/api/connect`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        if (!connRes.ok) {
-          const errBody = await connRes.json();
-          throw new Error(errBody.error || `Server responded with ${connRes.status}`);
-        }
-
         const connData = await connRes.json();
-        if (!connData.success) throw new Error(connData.error || 'Broker rejected credentials');
-
-        // Step 2: Sync Deals
-        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Deploying Terminal & Syncing...`;
-
-        const tradesRes = await fetch(`${BACKEND_URL}/api/trades/${connData.accountId}`);
-        if (!tradesRes.ok) {
-          const errBody = await tradesRes.json();
-          throw new Error(errBody.error || 'Sync timeout, try again in 15 seconds');
+        if (!connRes.ok || !connData.success) {
+          throw new Error(connData.error || 'Server rejected broker connection request');
         }
 
-        const tradesData = await tradesRes.json();
-        if (!tradesData.success) throw new Error(tradesData.error || 'Failed to download deals');
+        btn.innerHTML = `<i class="ph-bold ph-spinner animate-spin"></i> Deploying MT5 & Syncing Deals...`;
 
-        const formatted = tradesData.trades.map(t => ({
+        // Fetch Trades
+        const tradesRes = await fetch(`${BACKEND_URL}/api/trades/${connData.accountId}`);
+        const tradesData = await tradesRes.json();
+
+        if (!tradesRes.ok || !tradesData.success) {
+          throw new Error(tradesData.error || 'Failed to download deals from broker server');
+        }
+
+        const formatted = (tradesData.trades || []).map(t => ({
           ...t,
           account: server
         }));
@@ -715,9 +696,9 @@
         renderTrades();
         renderLeaderboard();
         closeSyncModal();
-        showToast(`Connected ${server}! Fetched ${formatted.length} deals.`);
+        showToast(`Connected to ${server}! Synced ${formatted.length} deals.`);
       } catch (err) {
-        console.error(err);
+        console.error('MT5 Connection Error:', err);
         showToast(err.message, 'error');
       } finally {
         btn.disabled = false;
@@ -765,7 +746,6 @@
       showToast('Record deleted', 'info');
     }
 
-    // Auto-check active session on load
     window.onload = () => {
       const activeUser = localStorage.getItem('active_session_user');
       if (activeUser) {
